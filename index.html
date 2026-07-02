@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manou — AI Lesson Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal:#0D9488; --teal-dark:#0F766E; --teal-light:#CCFBF1;
+  --coral:#FF6B5E; --coral-light:#FFE4E1;
+  --sun:#F59E0B; --sun-light:#FEF3C7;
+  --violet:#8B5CF6; --violet-light:#EDE9FE;
+  --sky:#0EA5E9; --sky-light:#E0F2FE;
+  --pink:#EC4899; --pink-light:#FCE7F3;
+  --green:#22C55E; --green-light:#DCFCE7;
+  --ink:#1E293B; --ink-soft:#64748B;
+  --cream:#FDFBF7; --card:#FFFFFF;
+  --radius:20px; --shadow:0 4px 20px rgba(13,148,136,.10);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Nunito',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh}
+h1,h2,h3,.display{font-family:'Baloo 2',cursive}
+button{font-family:inherit;cursor:pointer;border:none}
+input,select,textarea{font-family:inherit;font-size:16px}
+.screen{display:none;min-height:100vh}
+.screen.active{display:block}
+.container{max-width:880px;margin:0 auto;padding:20px}
+
+/* ---------- Splash ---------- */
+#splash{position:fixed;inset:0;background:linear-gradient(160deg,var(--teal) 0%,var(--teal-dark) 100%);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:1000;transition:opacity .6s}
+#splash.hide{opacity:0;pointer-events:none}
+.splash-logo{font-family:'Baloo 2';font-size:64px;color:#fff;font-weight:800;letter-spacing:1px;animation:pop .8s ease}
+.splash-sub{color:var(--teal-light);font-size:18px;margin-top:6px;font-weight:600}
+.splash-badge{margin-top:22px;background:var(--coral);color:#fff;padding:8px 20px;border-radius:999px;font-weight:800;font-size:14px;animation:pop 1s ease}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+
+/* ---------- Header ---------- */
+header{background:#fff;border-bottom:3px solid var(--teal-light);position:sticky;top:0;z-index:50}
+.head-in{max-width:880px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'Baloo 2';font-size:26px;font-weight:800;color:var(--teal)}
+.logo span{color:var(--coral)}
+.pro-pill{background:linear-gradient(90deg,var(--sun),var(--coral));color:#fff;font-size:12px;font-weight:800;padding:4px 12px;border-radius:999px;margin-left:8px;vertical-align:middle}
+.head-btns{display:flex;gap:8px}
+.icon-btn{background:var(--teal-light);color:var(--teal-dark);border-radius:12px;padding:8px 14px;font-weight:800;font-size:14px}
+.icon-btn:hover{background:var(--teal);color:#fff}
+
+/* ---------- Cards & buttons ---------- */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;margin-bottom:16px}
+.btn{background:var(--teal);color:#fff;font-weight:800;font-size:16px;padding:14px 28px;border-radius:999px;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 14px rgba(13,148,136,.35)}
+.btn:hover{transform:translateY(-2px)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn.coral{background:var(--coral);box-shadow:0 4px 14px rgba(255,107,94,.35)}
+.btn.ghost{background:#fff;color:var(--teal);border:2px solid var(--teal);box-shadow:none}
+.btn.small{padding:9px 18px;font-size:14px}
+.chip{display:inline-block;padding:10px 18px;border-radius:999px;border:2px solid #E2E8F0;background:#fff;font-weight:700;font-size:14px;margin:4px;transition:.15s}
+.chip.sel{background:var(--teal);border-color:var(--teal);color:#fff}
+label.f-label{display:block;font-weight:800;margin:18px 0 8px;font-size:15px}
+input[type=text],select,textarea{width:100%;padding:13px 16px;border:2px solid #E2E8F0;border-radius:14px;outline:none;transition:.15s;background:#fff}
+input[type=text]:focus,select:focus,textarea:focus{border-color:var(--teal)}
+.steps{display:flex;gap:8px;justify-content:center;margin:18px 0 22px}
+.step-dot{width:34px;height:34px;border-radius:50%;background:#E2E8F0;color:var(--ink-soft);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.step-dot.on{background:var(--teal);color:#fff}
+.step-line{width:34px;height:3px;background:#E2E8F0;align-self:center;border-radius:2px}
+.wiz-nav{display:flex;justify-content:space-between;margin-top:22px}
+
+/* ---------- Home ---------- */
+.hero{text-align:center;padding:36px 20px 10px}
+.hero h1{font-size:40px;color:var(--teal-dark);line-height:1.15}
+.hero h1 em{color:var(--coral);font-style:normal}
+.hero p{color:var(--ink-soft);font-size:17px;margin-top:8px;font-weight:600}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:26px 0}
+.feat{background:#fff;border-radius:18px;padding:18px 12px;text-align:center;box-shadow:var(--shadow);border-top:5px solid var(--teal)}
+.feat:nth-child(2){border-top-color:var(--coral)}
+.feat:nth-child(3){border-top-color:var(--sun)}
+.feat:nth-child(4){border-top-color:var(--violet)}
+.feat:nth-child(5){border-top-color:var(--sky)}
+.feat:nth-child(6){border-top-color:var(--pink)}
+.feat .em{font-size:30px}
+.feat b{display:block;margin-top:6px;font-size:14px}
+.feat s-tag{display:inline-block;margin-top:5px;font-size:11px;font-weight:800;color:var(--green);background:var(--green-light);padding:2px 10px;border-radius:999px}
+.saved-item{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:16px;padding:14px 18px;margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer;transition:.15s}
+.saved-item:hover{transform:translateY(-2px)}
+.saved-item .del{background:var(--coral-light);color:var(--coral);border-radius:10px;padding:6px 12px;font-weight:800}
+
+/* ---------- Lesson sections ---------- */
+.sec{border-radius:var(--radius);padding:22px;margin-bottom:14px;box-shadow:var(--shadow)}
+.sec h3{font-size:20px;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.sec .body{font-size:15.5px;line-height:1.7;font-weight:600}
+.sec ul{padding-left:22px}
+.sec li{margin-bottom:6px}
+.c-teal{background:var(--teal-light)}.c-coral{background:var(--coral-light)}
+.c-sun{background:var(--sun-light)}.c-violet{background:var(--violet-light)}
+.c-sky{background:var(--sky-light)}.c-pink{background:var(--pink-light)}
+.c-green{background:var(--green-light)}
+.vocab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.v-card{background:#fff;border-radius:16px;padding:14px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.06);border:2px solid transparent;transition:.15s}
+.v-card:hover{border-color:var(--teal)}
+.v-word{font-family:'Baloo 2';font-size:19px;color:var(--teal-dark);font-weight:800}
+.v-def{font-size:13px;color:var(--ink-soft);margin:6px 0;font-weight:600}
+.v-say{background:var(--coral);color:#fff;border-radius:999px;padding:6px 14px;font-weight:800;font-size:13px}
+.img-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px}
+.img-row img{width:100%;height:140px;object-fit:cover;border-radius:14px;box-shadow:var(--shadow)}
+
+/* ---------- Quiz / Match ---------- */
+.q-opt{display:block;width:100%;text-align:left;background:#fff;border:2px solid #E2E8F0;border-radius:14px;padding:13px 16px;margin-bottom:9px;font-weight:700;font-size:15px;transition:.15s}
+.q-opt:hover{border-color:var(--teal)}
+.q-opt.right{background:var(--green-light);border-color:var(--green)}
+.q-opt.wrong{background:var(--coral-light);border-color:var(--coral)}
+.match-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.m-item{background:#fff;border:2px solid #E2E8F0;border-radius:14px;padding:12px;font-weight:700;font-size:14px;transition:.15s;width:100%}
+.m-item.sel{border-color:var(--violet);background:var(--violet-light)}
+.m-item.done{border-color:var(--green);background:var(--green-light);opacity:.7;pointer-events:none}
+
+/* ---------- Karaoke ---------- */
+.karaoke{background:#fff;border-radius:16px;padding:16px;line-height:2;font-size:17px;font-weight:700}
+.k-word{padding:2px 4px;border-radius:6px}
+.k-word.now{background:var(--sun);color:#fff}
+
+/* ---------- Slides mode ---------- */
+#slidesOverlay{position:fixed;inset:0;background:var(--teal-dark);z-index:200;display:none;flex-direction:column}
+#slidesOverlay.on{display:flex}
+.slide{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;color:#fff}
+.slide h2{font-size:clamp(28px,5vw,52px);margin-bottom:18px}
+.slide .s-body{font-size:clamp(17px,2.4vw,24px);max-width:760px;line-height:1.6;font-weight:700}
+.slide img{max-height:220px;border-radius:18px;margin-bottom:20px;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+.slide-nav{display:flex;justify-content:space-between;align-items:center;padding:16px 26px;background:rgba(0,0,0,.2)}
+.slide-nav button{background:#fff;color:var(--teal-dark);border-radius:999px;padding:10px 22px;font-weight:800}
+.s-count{color:#fff;font-weight:800}
+
+/* ---------- Modals & misc ---------- */
+.modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:150;display:none;align-items:flex-start;justify-content:center;padding:30px 16px;overflow:auto}
+.modal-bg.on{display:flex}
+.modal{background:#fff;border-radius:var(--radius);max-width:720px;width:100%;padding:26px;position:relative}
+.modal .close{position:absolute;top:14px;right:14px;background:var(--coral-light);color:var(--coral);border-radius:10px;padding:6px 12px;font-weight:800}
+.loader{text-align:center;padding:60px 20px}
+.spin{width:60px;height:60px;border:6px solid var(--teal-light);border-top-color:var(--teal);border-radius:50%;margin:0 auto 18px;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loader p{font-weight:800;color:var(--teal-dark);font-size:17px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0;position:sticky;top:66px;background:var(--cream);padding:8px 0;z-index:40}
+.tool-b{background:#fff;border:2px solid var(--teal);color:var(--teal-dark);border-radius:999px;padding:9px 16px;font-weight:800;font-size:13.5px}
+.tool-b:hover{background:var(--teal);color:#fff}
+.err{background:var(--coral-light);color:#B91C1C;border-radius:14px;padding:14px;font-weight:700;margin:12px 0;display:none}
+.hint{font-size:13px;color:var(--ink-soft);font-weight:600;margin-top:6px}
+pre.plainout{white-space:pre-wrap;font-family:'Nunito';font-size:15px;line-height:1.7;font-weight:600}
+@media print{
+  header,.toolbar,.wiz-nav,.btn,.tool-b,.v-say{display:none!important}
+  body{background:#fff}.sec{box-shadow:none;border:1px solid #ddd;page-break-inside:avoid}
+}
+@media (max-width:560px){.match-cols{grid-template-columns:1fr}.hero h1{font-size:30px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-logo">Manou 🍎</div>
+  <div class="splash-sub">AI Lesson Planner for Early Years</div>
+  <div class="splash-badge">✨ ALL PRO FEATURES FREE ✨</div>
+</div>
+
+<header>
+  <div class="head-in">
+    <div class="logo">Manou<span>.</span><span class="pro-pill">PRO — FREE</span></div>
+    <div class="head-btns">
+      <button class="icon-btn" onclick="go('home')">🏠 Home</button>
+      <button class="icon-btn" onclick="openKeyModal()">🔑 API Key</button>
+    </div>
+  </div>
+</header>
+
+<!-- ================= HOME ================= -->
+<div class="screen active" id="scr-home">
+  <div class="container">
+    <div class="hero">
+      <h1>Plan a full lesson<br>in <em>60 seconds</em> 🎉</h1>
+      <p>Everything premium is unlocked. Unlimited lessons, forever free.</p>
+      <button class="btn coral" style="margin-top:20px;font-size:18px" onclick="startWizard()">✨ Create a New Lesson</button>
+    </div>
+    <div class="feature-grid">
+      <div class="feat"><div class="em">📋</div><b>Full Lesson Plans</b><s-tag>UNLOCKED</s-tag></div>
+      <div class="feat"><div class="em">🖼️</div><b>Slides Mode</b><s-tag>UNLOCKED</s-tag></div>
+      <div class="feat"><div class="em">📝</div><b>Worksheets</b><s-tag>UNLOCKED</s-tag></div>
+      <div class="feat"><div class="em">🎯</div><b>Quizzes & Games</b><s-tag>UNLOCKED</s-tag></div>
+      <div class="feat"><div class="em">🔊</div><b>Read-Aloud Audio</b><s-tag>UNLOCKED</s-tag></div>
+      <div class="feat"><div class="em">📊</div><b>Rubrics & Export</b><s-tag>UNLOCKED</s-tag></div>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--teal-dark)">💾 My Saved Lessons</h3>
+      <div id="savedList" style="margin-top:12px"><p class="hint">No saved lessons yet. Create your first one!</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= WIZARD ================= -->
+<div class="screen" id="scr-wizard">
+  <div class="container">
+    <div class="steps">
+      <div class="step-dot on" id="d1">1</div><div class="step-line"></div>
+      <div class="step-dot" id="d2">2</div><div class="step-line"></div>
+      <div class="step-dot" id="d3">3</div>
+    </div>
+
+    <div class="card" id="wstep1">
+      <h2 style="color:var(--teal-dark)">📚 What are you teaching?</h2>
+      <label class="f-label">Lesson topic</label>
+      <input type="text" id="fTopic" placeholder="e.g. Feelings and Emotions, The Water Cycle, Rhyming Words">
+      <label class="f-label">Grade level</label>
+      <div id="gradeChips">
+        <button class="chip" data-v="KG1">KG1</button><button class="chip" data-v="KG2">KG2</button>
+        <button class="chip sel" data-v="Grade 1">Grade 1</button><button class="chip" data-v="Grade 2">Grade 2</button>
+        <button class="chip" data-v="Grade 3">Grade 3</button>
+      </div>
+      <label class="f-label">Subject</label>
+      <div id="subjChips">
+        <button class="chip sel" data-v="English">English</button><button class="chip" data-v="Phonics">Phonics</button>
+        <button class="chip" data-v="Math">Math</button><button class="chip" data-v="Science">Science</button>
+        <button class="chip" data-v="Moral Education">Moral Education</button>
+      </div>
+    </div>
+
+    <div class="card" id="wstep2" style="display:none">
+      <h2 style="color:var(--teal-dark)">🎯 Refine your lesson</h2>
+      <label class="f-label">Curriculum</label>
+      <select id="fCurr">
+        <option>British (EYFS / National Curriculum)</option>
+        <option>American (Common Core)</option>
+        <option>IB PYP</option>
+        <option>UAE National (MOE)</option>
+      </select>
+      <label class="f-label">Skill focus</label>
+      <div id="skillChips">
+        <button class="chip sel" data-v="Speaking & Vocabulary">Speaking & Vocabulary</button>
+        <button class="chip" data-v="Reading">Reading</button><button class="chip" data-v="Writing">Writing</button>
+        <button class="chip" data-v="Listening">Listening</button><button class="chip" data-v="Phonics">Phonics</button>
+      </div>
+      <label class="f-label">Lesson length</label>
+      <div id="lenChips">
+        <button class="chip" data-v="30 minutes">30 min</button>
+        <button class="chip sel" data-v="45 minutes">45 min</button>
+        <button class="chip" data-v="60 minutes">60 min</button>
+      </div>
+      <label class="f-label">Differentiation needs (optional)</label>
+      <input type="text" id="fDiff" placeholder="e.g. 3 EAL learners, 1 student with ADHD, mixed ability">
+    </div>
+
+    <div class="card" id="wstep3" style="display:none">
+      <h2 style="color:var(--teal-dark)">🎨 Pick a theme</h2>
+      <p class="hint">The theme shapes the story, examples and activities.</p>
+      <div id="themeChips" style="margin-top:12px">
+        <button class="chip sel" data-v="Classroom fun">🏫 Classroom fun</button>
+        <button class="chip" data-v="Under the sea">🐠 Under the sea</button>
+        <button class="chip" data-v="Space adventure">🚀 Space adventure</button>
+        <button class="chip" data-v="Jungle animals">🦁 Jungle animals</button>
+        <button class="chip" data-v="Superheroes">🦸 Superheroes</button>
+        <button class="chip" data-v="Fairy tales">🏰 Fairy tales</button>
+        <button class="chip" data-v="Dinosaurs">🦕 Dinosaurs</button>
+      </div>
+    </div>
+
+    <div class="wiz-nav">
+      <button class="btn ghost small" id="wBack" onclick="wizBack()">← Back</button>
+      <button class="btn small" id="wNext" onclick="wizNext()">Next →</button>
+    </div>
+    <div class="err" id="wizErr"></div>
+  </div>
+</div>
+
+<!-- ================= LOADING ================= -->
+<div class="screen" id="scr-loading">
+  <div class="container"><div class="loader">
+    <div class="spin"></div>
+    <p id="loadMsg">Manou is planning your lesson… 🍎</p>
+  </div></div>
+</div>
+
+<!-- ================= LESSON ================= -->
+<div class="screen" id="scr-lesson">
+  <div class="container">
+    <div class="toolbar">
+      <button class="tool-b" onclick="openSlides()">🖼️ Slides Mode</button>
+      <button class="tool-b" onclick="genExtra('worksheet')">📝 Worksheet</button>
+      <button class="tool-b" onclick="genExtra('activity')">✂️ Activity Sheet</button>
+      <button class="tool-b" onclick="genExtra('rubric')">📊 Rubric</button>
+      <button class="tool-b" onclick="readAloud()">🔊 Read Aloud</button>
+      <button class="tool-b" onclick="saveLesson()">💾 Save</button>
+      <button class="tool-b" onclick="window.print()">🖨️ Print / PDF</button>
+      <button class="tool-b" onclick="copyLesson()">📋 Copy</button>
+    </div>
+    <div id="lessonBody"></div>
+    <div style="text-align:center;margin:26px 0">
+      <button class="btn coral" onclick="startWizard()">✨ Create Another Lesson</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= SLIDES ================= -->
+<div id="slidesOverlay">
+  <div class="slide" id="slideBox"></div>
+  <div class="slide-nav">
+    <button onclick="slideMove(-1)">← Previous</button>
+    <span class="s-count" id="sCount"></span>
+    <div>
+      <button onclick="slideSpeak()" style="margin-right:8px">🔊</button>
+      <button onclick="closeSlides()">✕ Exit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= EXTRA MODAL ================= -->
+<div class="modal-bg" id="extraModal">
+  <div class="modal">
+    <button class="close" onclick="closeModal('extraModal')">✕</button>
+    <h2 id="extraTitle" style="color:var(--teal-dark);margin-bottom:12px"></h2>
+    <div id="extraBody"><div class="loader"><div class="spin"></div><p>Creating…</p></div></div>
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <button class="btn small" onclick="printExtra()">🖨️ Print</button>
+      <button class="btn ghost small" onclick="copyExtra()">📋 Copy</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= API KEY MODAL ================= -->
+<div class="modal-bg" id="keyModal">
+  <div class="modal">
+    <button class="close" onclick="closeModal('keyModal')">✕</button>
+    <h2 style="color:var(--teal-dark)">🔑 Your free Google Gemini key</h2>
+    <p class="hint" style="margin:10px 0">Manou runs on Google's free AI. Your key stays only on this device (localStorage). Get one free at <b>aistudio.google.com</b> → Get API key.</p>
+    <input type="text" id="keyInput" placeholder="Paste your Gemini API key (starts with AIza…)">
+    <button class="btn small" style="margin-top:12px" onclick="saveKey()">Save key</button>
+    <p class="hint" id="keyStatus" style="margin-top:10px"></p>
+  </div>
+</div>
+
+<script>
+/* ================= STATE ================= */
+const S = {
+  step:1, grade:'Grade 1', subject:'English', skill:'Speaking & Vocabulary',
+  length:'45 minutes', theme:'Classroom fun', lesson:null, slides:[], slideIdx:0,
+  extraText:'', speech:null
+};
+const $ = id => document.getElementById(id);
+const key = () => localStorage.getItem('manou_gemini_key') || '';
+
+/* ================= NAV ================= */
+function go(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $('scr-'+name).classList.add('active');
+  window.scrollTo(0,0);
+  if(name==='home') renderSaved();
+}
+setTimeout(()=>{ $('splash').classList.add('hide'); if(!key()) openKeyModal(); }, 1800);
+
+/* ================= CHIPS ================= */
+function bindChips(id, cb){
+  $(id).querySelectorAll('.chip').forEach(c=>c.onclick=()=>{
+    $(id).querySelectorAll('.chip').forEach(x=>x.classList.remove('sel'));
+    c.classList.add('sel'); cb(c.dataset.v);
+  });
+}
+bindChips('gradeChips', v=>S.grade=v);
+bindChips('subjChips', v=>S.subject=v);
+bindChips('skillChips', v=>S.skill=v);
+bindChips('lenChips', v=>S.length=v);
+bindChips('themeChips', v=>S.theme=v);
+
+/* ================= WIZARD ================= */
+function startWizard(){ S.step=1; showStep(); go('wizard'); }
+function showStep(){
+  [1,2,3].forEach(n=>{ $('wstep'+n).style.display = n===S.step?'block':'none';
+    $('d'+n).classList.toggle('on', n<=S.step); });
+  $('wBack').style.visibility = S.step===1?'hidden':'visible';
+  $('wNext').textContent = S.step===3 ? '✨ Generate Lesson' : 'Next →';
+}
+function wizBack(){ if(S.step>1){S.step--;showStep();} }
+function wizNext(){
+  $('wizErr').style.display='none';
+  if(S.step===1 && !$('fTopic').value.trim()){ showErr('Please type a lesson topic first 🙂'); return; }
+  if(S.step<3){ S.step++; showStep(); } else generateLesson();
+}
+function showErr(m){ const e=$('wizErr'); e.textContent=m; e.style.display='block'; }
+
+/* ================= GEMINI CALL ================= */
+async function askAI(prompt, json=false){
+  if(!key()){ openKeyModal(); throw new Error('Add your free Gemini key first.'); }
+  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key(),{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      contents:[{parts:[{text:prompt}]}],
+      generationConfig: json? {responseMimeType:'application/json', temperature:0.8} : {temperature:0.8}
+    })
+  });
+  if(!res.ok){
+    const t = await res.text();
+    throw new Error(res.status===400||res.status===403 ? 'Your API key looks invalid. Click 🔑 API Key and paste a fresh one.' :
+      res.status===429 ? 'Free limit reached for this minute. Wait 30 seconds and try again.' : 'AI error: '+t.slice(0,140));
+  }
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+/* ================= GENERATE LESSON ================= */
+const loadLines = ['Planning your starter… 🎈','Writing objectives… 🎯','Building activities… ✂️','Adding vocabulary cards… 🃏','Creating the quiz… 🎉','Almost ready… 🍎'];
+let loadTimer;
+function startLoader(){ let i=0; $('loadMsg').textContent=loadLines[0];
+  loadTimer=setInterval(()=>{ i=(i+1)%loadLines.length; $('loadMsg').textContent=loadLines[i]; },2200); }
+function stopLoader(){ clearInterval(loadTimer); }
+
+async function generateLesson(){
+  go('loading'); startLoader();
+  const topic = $('fTopic').value.trim();
+  const prompt = `You are an expert early-years teacher in the UAE. Create a complete ${S.length} ${S.subject} lesson plan for ${S.grade} on the topic "${topic}".
+Curriculum: ${$('fCurr').value}. Skill focus: ${S.skill}. Theme every example and activity around: "${S.theme}".
+Differentiation notes: ${$('fDiff').value || 'mixed ability class'}.
+Language must be simple, warm and classroom-ready. Return ONLY valid JSON with exactly this shape:
+{
+ "title": "fun lesson title",
+ "overview": "2-3 sentence overview",
+ "objectives": ["objective 1","objective 2","objective 3"],
+ "successCriteria": ["I can ...","I can ...","I can ..."],
+ "vocabulary": [{"word":"","definition":"child-friendly definition","sentence":"example sentence"}] (exactly 6 words),
+ "starter": "engaging 5-min hook, step by step",
+ "mainTeaching": {"iDo":"teacher modelling steps","weDo":"guided practice steps","youDo":"independent task"},
+ "activities": ["activity 1 with steps","activity 2 with steps","activity 3 with steps"],
+ "plenary": "wrap-up + exit ticket question",
+ "assessment": "AfL strategies used in this lesson",
+ "resources": ["item 1","item 2","item 3","item 4"],
+ "crossCurricular": "links to other subjects",
+ "homework": "simple age-appropriate task",
+ "teacherNotes": "tips, misconceptions to watch, EAL support",
+ "story": "a 90-120 word themed read-aloud story for the children using 4+ vocabulary words",
+ "quiz": [{"q":"","options":["","","",""],"answer":0}] (exactly 5 questions),
+ "imageKeywords": ["one word","one word","one word"]
+}`;
+  try{
+    const raw = await askAI(prompt, true);
+    S.lesson = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    S.lesson.meta = {topic, grade:S.grade, subject:S.subject, theme:S.theme, length:S.length, date:new Date().toLocaleDateString()};
+    stopLoader(); renderLesson(); go('lesson');
+  }catch(e){ stopLoader(); go('wizard'); showErr(e.message); }
+}
+
+/* ================= RENDER LESSON ================= */
+function esc(s){ return String(s??'').replace(/</g,'&lt;'); }
+function list(arr){ return '<ul>'+ (arr||[]).map(x=>'<li>'+esc(x)+'</li>').join('') +'</ul>'; }
+
+function renderLesson(){
+  const L = S.lesson, M = L.meta;
+  const imgs = (L.imageKeywords||[M.topic]).slice(0,3).map((k,i)=>
+    `<img src="https://loremflickr.com/400/280/${encodeURIComponent(k)}?lock=${i+7}" alt="${esc(k)}" onerror="this.style.display='none'">`).join('');
+  $('lessonBody').innerHTML = `
+  <div class="sec c-teal"><h3>📋 ${esc(L.title)}</h3>
+    <div class="body"><b>${esc(M.grade)} · ${esc(M.subject)} · ${esc(M.length)} · ${esc(M.theme)}</b><br>${esc(L.overview)}</div>
+    <div class="img-row">${imgs}</div></div>
+  <div class="sec c-sun"><h3>🎯 Learning Objectives</h3><div class="body">${list(L.objectives)}
+    <b>Success criteria:</b>${list(L.successCriteria)}</div></div>
+  <div class="sec c-coral"><h3>🃏 Key Vocabulary <button class="v-say" onclick="speakAllVocab()">🔊 Say all</button></h3>
+    <div class="vocab-grid">${(L.vocabulary||[]).map(v=>`
+      <div class="v-card"><div class="v-word">${esc(v.word)}</div>
+      <div class="v-def">${esc(v.definition)}</div>
+      <div class="v-def"><i>"${esc(v.sentence)}"</i></div>
+      <button class="v-say" onclick="speak('${esc(v.word).replace(/'/g,"\\'")}. ${esc(v.sentence).replace(/'/g,"\\'")}')">🔊</button></div>`).join('')}</div></div>
+  <div class="sec c-violet"><h3>🎈 Starter (5 min)</h3><div class="body">${esc(L.starter)}</div></div>
+  <div class="sec c-sky"><h3>👩‍🏫 Main Teaching</h3><div class="body">
+    <b>I do:</b> ${esc(L.mainTeaching?.iDo)}<br><br><b>We do:</b> ${esc(L.mainTeaching?.weDo)}<br><br><b>You do:</b> ${esc(L.mainTeaching?.youDo)}</div></div>
+  <div class="sec c-green"><h3>✂️ Pupil Activities</h3><div class="body">${list(L.activities)}</div></div>
+  <div class="sec c-pink"><h3>📖 Themed Story (Read Aloud)</h3>
+    <div class="karaoke" id="storyBox">${esc(L.story)}</div>
+    <button class="btn small" style="margin-top:10px" onclick="readAloud()">🔊 Read with karaoke</button></div>
+  <div class="sec c-teal"><h3>🎉 Interactive Quiz</h3><div id="quizBox"></div></div>
+  <div class="sec c-violet"><h3>🧩 Matching Game — word to meaning</h3><div id="matchBox"></div></div>
+  <div class="sec c-sun"><h3>🏁 Plenary & Exit Ticket</h3><div class="body">${esc(L.plenary)}</div></div>
+  <div class="sec c-coral"><h3>✅ Assessment for Learning</h3><div class="body">${esc(L.assessment)}</div></div>
+  <div class="sec c-sky"><h3>🎒 Resources</h3><div class="body">${list(L.resources)}</div></div>
+  <div class="sec c-green"><h3>🔗 Cross-Curricular Links</h3><div class="body">${esc(L.crossCurricular)}</div></div>
+  <div class="sec c-pink"><h3>🏠 Homework</h3><div class="body">${esc(L.homework)}</div></div>
+  <div class="sec c-teal"><h3>📌 Teacher Notes</h3><div class="body">${esc(L.teacherNotes)}</div></div>`;
+  renderQuiz(); renderMatch(); buildSlides();
+}
+
+/* ================= QUIZ ================= */
+let qIdx=0, qScore=0;
+function renderQuiz(){ qIdx=0; qScore=0; showQ(); }
+function showQ(){
+  const quiz = S.lesson.quiz||[];
+  if(qIdx>=quiz.length){
+    $('quizBox').innerHTML = `<div class="body" style="text-align:center;font-size:20px">
+      🌟 Score: <b>${qScore}/${quiz.length}</b> — ${qScore===quiz.length?'Perfect! Superstar! 🏆':'Great effort! 🎈'}<br>
+      <button class="btn small" style="margin-top:10px" onclick="renderQuiz()">🔁 Play again</button></div>`;
+    return;
+  }
+  const q = quiz[qIdx];
+  $('quizBox').innerHTML = `<div class="body"><b>Q${qIdx+1}. ${esc(q.q)}</b></div><div style="margin-top:10px">`+
+    q.options.map((o,i)=>`<button class="q-opt" onclick="answer(this,${i})">${esc(o)}</button>`).join('')+`</div>`;
+}
+function answer(btn,i){
+  const q = S.lesson.quiz[qIdx];
+  document.querySelectorAll('.q-opt').forEach(b=>b.disabled=true);
+  if(i===q.answer){ btn.classList.add('right'); qScore++; speak('Correct! Well done!'); }
+  else{ btn.classList.add('wrong');
+    document.querySelectorAll('.q-opt')[q.answer].classList.add('right'); speak('Good try!'); }
+  setTimeout(()=>{ qIdx++; showQ(); }, 1400);
+}
+
+/* ================= MATCHING GAME ================= */
+let mSel=null;
+function renderMatch(){
+  const v = (S.lesson.vocabulary||[]).slice(0,5);
+  const words = [...v].sort(()=>Math.random()-.5);
+  const defs = [...v].sort(()=>Math.random()-.5);
+  $('matchBox').innerHTML = `<div class="match-cols">
+    <div>${words.map(x=>`<button class="m-item" data-w="${esc(x.word)}" onclick="pick(this,'w')" style="margin-bottom:8px">${esc(x.word)}</button>`).join('')}</div>
+    <div>${defs.map(x=>`<button class="m-item" data-w="${esc(x.word)}" onclick="pick(this,'d')" style="margin-bottom:8px">${esc(x.definition)}</button>`).join('')}</div>
+  </div>`;
+  mSel=null;
+}
+function pick(el,side){
+  if(el.classList.contains('done')) return;
+  if(!mSel){ mSel={el,side}; el.classList.add('sel'); return; }
+  if(mSel.side===side){ mSel.el.classList.remove('sel'); mSel={el,side}; el.classList.add('sel'); return; }
+  if(mSel.el.dataset.w===el.dataset.w){
+    mSel.el.classList.add('done'); el.classList.add('done'); speak('Match!');
+  }
+  mSel.el.classList.remove('sel'); mSel=null;
+}
+
+/* ================= SPEECH / KARAOKE ================= */
+function speak(text){
+  try{ speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate=0.92; u.pitch=1.05; u.lang='en-GB';
+    const v = speechSynthesis.getVoices().find(v=>/en-GB|en-US/.test(v.lang));
+    if(v) u.voice=v;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function speakAllVocab(){ speak((S.lesson.vocabulary||[]).map(v=>v.word+'. '+v.sentence).join(' ')); }
+function readAloud(){
+  const story = S.lesson?.story || ''; if(!story) return;
+  const words = story.split(/\s+/);
+  $('storyBox').innerHTML = words.map((w,i)=>`<span class="k-word" id="kw${i}">${esc(w)}</span> `).join('');
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(story);
+  u.rate=0.88; u.lang='en-GB';
+  let idx=0;
+  u.onboundary = e=>{ if(e.name!=='word'&&e.charIndex===undefined) return;
+    document.querySelectorAll('.k-word').forEach(k=>k.classList.remove('now'));
+    // map charIndex to word index
+    let count=0, target=0;
+    for(let i=0;i<words.length;i++){ if(count>=e.charIndex){target=i;break;} count+=words[i].length+1; target=i; }
+    const el=$('kw'+target); if(el){ el.classList.add('now'); }
+  };
+  u.onend = ()=>document.querySelectorAll('.k-word').forEach(k=>k.classList.remove('now'));
+  speechSynthesis.speak(u);
+}
+
+/* ================= SLIDES MODE ================= */
+function buildSlides(){
+  const L=S.lesson, M=L.meta, kw = L.imageKeywords||[M.topic];
+  const img = i => `https://loremflickr.com/640/400/${encodeURIComponent(kw[i%kw.length])}?lock=${i+3}`;
+  S.slides = [
+    {t:'🍎 '+L.title, b:`${M.grade} · ${M.subject} · ${M.theme}`, img:img(0)},
+    {t:'🎯 Today we will…', b:(L.objectives||[]).join('  •  ')},
+    ...(L.vocabulary||[]).map((v,i)=>({t:'🃏 '+v.word, b:v.definition+'\n\n"'+v.sentence+'"', img:img(i)})),
+    {t:'🎈 Warm Up!', b:L.starter},
+    {t:'📖 Story Time', b:L.story, img:img(1)},
+    {t:'✂️ Activity Time', b:(L.activities||[])[0]||''},
+    {t:'🏁 Exit Ticket', b:L.plenary},
+    {t:'🌟 Well done, class!', b:'You were amazing today! 🎉', img:img(2)}
+  ];
+}
+function openSlides(){ S.slideIdx=0; $('slidesOverlay').classList.add('on'); showSlide(); }
+function closeSlides(){ $('slidesOverlay').classList.remove('on'); speechSynthesis.cancel(); }
+function showSlide(){
+  const s=S.slides[S.slideIdx];
+  $('slideBox').innerHTML = (s.img?`<img src="${s.img}" onerror="this.style.display='none'">`:'')+
+    `<h2>${esc(s.t)}</h2><div class="s-body">${esc(s.b).replace(/\n/g,'<br>')}</div>`;
+  $('sCount').textContent = (S.slideIdx+1)+' / '+S.slides.length;
+}
+function slideMove(d){ S.slideIdx=Math.max(0,Math.min(S.slides.length-1,S.slideIdx+d)); showSlide(); }
+function slideSpeak(){ const s=S.slides[S.slideIdx]; speak(s.t.replace(/[^\w\s'!,.?]/g,'')+'. '+s.b); }
+document.addEventListener('keydown',e=>{
+  if(!$('slidesOverlay').classList.contains('on')) return;
+  if(e.key==='ArrowRight') slideMove(1);
+  if(e.key==='ArrowLeft') slideMove(-1);
+  if(e.key==='Escape') closeSlides();
+});
+
+/* ================= EXTRAS (worksheet/activity/rubric) ================= */
+async function genExtra(kind){
+  const M=S.lesson.meta;
+  const titles={worksheet:'📝 Printable Worksheet',activity:'✂️ Activity Sheet',rubric:'📊 Assessment Rubric'};
+  $('extraTitle').textContent = titles[kind];
+  $('extraBody').innerHTML = '<div class="loader"><div class="spin"></div><p>Creating…</p></div>';
+  $('extraModal').classList.add('on');
+  const prompts={
+    worksheet:`Create a printable worksheet for ${M.grade} on "${M.topic}" (${M.subject}, theme: ${M.theme}). Include: name/date line, 3 short sections (trace or fill the missing word, circle the correct answer, draw and label). Use the lesson vocabulary: ${(S.lesson.vocabulary||[]).map(v=>v.word).join(', ')}. Plain text only, clearly numbered, child-friendly.`,
+    activity:`Create a hands-on activity sheet for ${M.grade} on "${M.topic}" themed "${M.theme}". Include: materials list, 4 numbered steps for a craft or group game, one challenge question, one reflection question. Plain text only.`,
+    rubric:`Create a simple assessment rubric for ${M.grade} on "${M.topic}" with 4 criteria and 3 levels (Emerging / Developing / Secure). Format as plain text lines like "Criteria — Emerging: ... — Developing: ... — Secure: ...". Child-friendly UAE school language.`
+  };
+  try{
+    S.extraText = await askAI(prompts[kind]);
+    $('extraBody').innerHTML = '<pre class="plainout">'+esc(S.extraText)+'</pre>';
+  }catch(e){ $('extraBody').innerHTML = '<div class="err" style="display:block">'+esc(e.message)+'</div>'; }
+}
+function copyExtra(){ navigator.clipboard.writeText(S.extraText); alert('Copied! 📋'); }
+function printExtra(){
+  const w=window.open('','_blank');
+  w.document.write('<pre style="font-family:Nunito,sans-serif;font-size:15px;white-space:pre-wrap;padding:30px">'+esc(S.extraText)+'</pre>');
+  w.document.close(); w.print();
+}
+
+/* ================= SAVE / LOAD ================= */
+function saveLesson(){
+  const all = JSON.parse(localStorage.getItem('manou_lessons')||'[]');
+  all.unshift({ id:Date.now(), lesson:S.lesson });
+  localStorage.setItem('manou_lessons', JSON.stringify(all.slice(0,30)));
+  alert('Saved! 💾 Find it on your Home screen.');
+}
+function renderSaved(){
+  const all = JSON.parse(localStorage.getItem('manou_lessons')||'[]');
+  if(!all.length){ $('savedList').innerHTML='<p class="hint">No saved lessons yet. Create your first one!</p>'; return; }
+  $('savedList').innerHTML = all.map(x=>`
+    <div class="saved-item" onclick="loadSaved(${x.id})">
+      <div><b>${esc(x.lesson.title)}</b><br><span class="hint">${esc(x.lesson.meta.grade)} · ${esc(x.lesson.meta.subject)} · ${esc(x.lesson.meta.date)}</span></div>
+      <button class="del" onclick="event.stopPropagation();delSaved(${x.id})">🗑️</button>
+    </div>`).join('');
+}
+function loadSaved(id){
+  const all = JSON.parse(localStorage.getItem('manou_lessons')||'[]');
+  const f = all.find(x=>x.id===id); if(!f) return;
+  S.lesson = f.lesson; renderLesson(); go('lesson');
+}
+function delSaved(id){
+  let all = JSON.parse(localStorage.getItem('manou_lessons')||'[]');
+  all = all.filter(x=>x.id!==id);
+  localStorage.setItem('manou_lessons', JSON.stringify(all)); renderSaved();
+}
+function copyLesson(){
+  const L=S.lesson;
+  const txt = [L.title, '', 'OVERVIEW: '+L.overview, '', 'OBJECTIVES:', ...(L.objectives||[]),
+    '', 'VOCABULARY:', ...(L.vocabulary||[]).map(v=>v.word+' — '+v.definition),
+    '', 'STARTER: '+L.starter, '', 'MAIN TEACHING:', 'I do: '+L.mainTeaching?.iDo,
+    'We do: '+L.mainTeaching?.weDo, 'You do: '+L.mainTeaching?.youDo,
+    '', 'ACTIVITIES:', ...(L.activities||[]), '', 'PLENARY: '+L.plenary,
+    'ASSESSMENT: '+L.assessment, 'HOMEWORK: '+L.homework, 'NOTES: '+L.teacherNotes].join('\n');
+  navigator.clipboard.writeText(txt); alert('Lesson copied! 📋');
+}
+
+/* ================= KEY MODAL ================= */
+function openKeyModal(){ $('keyInput').value = key(); $('keyModal').classList.add('on');
+  $('keyStatus').textContent = key() ? '✅ A key is saved on this device.' : ''; }
+function closeModal(id){ $(id).classList.remove('on'); }
+function saveKey(){
+  const v = $('keyInput').value.trim();
+  if(!v){ $('keyStatus').textContent='Please paste a key first.'; return; }
+  localStorage.setItem('manou_gemini_key', v);
+  $('keyStatus').textContent='✅ Saved! You are ready to create lessons.';
+  setTimeout(()=>closeModal('keyModal'), 900);
+}
+renderSaved();
+</script>
+</body>
+</html>
